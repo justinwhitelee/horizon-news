@@ -46,8 +46,6 @@ jobs:
         run: uv run python scripts/build_site.py
 
       - name: Publish to serv00 (independent static page)
-        # Only runs once the user has filled the serv00 secrets.
-        if: ${{ secrets.SERV00_PASS != '' }}
         env:
           SERV00_HOST: ${{ secrets.SERV00_HOST }}
           SERV00_USER: ${{ secrets.SERV00_USER }}
