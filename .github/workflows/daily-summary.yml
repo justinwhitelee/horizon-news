@@ -1,0 +1,71 @@
+name: Daily Horizon Summary
+
+on:
+  schedule:
+    # GitHub scheduled workflows use UTC. 23:00 UTC = 07:00 Asia/Shanghai.
+    # This intentionally runs early to offset the observed schedule delay.
+    - cron: '0 23 * * *'
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  daily-summary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to commit changes (gh-pages)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.11.26"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Prepare GitHub Actions config
+        run: cp data/config.github.json data/config.json
+
+      - name: Run Horizon
+        env:
+          # AI provider key (required for summarization) — agnes-2.5-flash, OpenAI-compatible
+          AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
+          # Optional source keys (leave blank if unused)
+          LWN_KEY: ${{ secrets.LWN_KEY }}
+          HORIZON_WEBHOOK_URL: ${{ secrets.HORIZON_WEBHOOK_URL }}
+        run: uv run horizon --hours 24
+
+      - name: Build static site (Markdown -> HTML)
+        run: uv run python scripts/build_site.py
+
+      - name: Publish to serv00 (independent static page)
+        # Only runs once the user has filled the serv00 secrets.
+        if: ${{ secrets.SERV00_PASS != '' }}
+        env:
+          SERV00_HOST: ${{ secrets.SERV00_HOST }}
+          SERV00_USER: ${{ secrets.SERV00_USER }}
+          SERV00_PASS: ${{ secrets.SERV00_PASS }}
+          SERV00_PATH: ${{ secrets.SERV00_PATH }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y lftp
+          lftp -e "set ssl:verify-certificate no; open sftp://$SERV00_HOST; user $SERV00_USER $SERV00_PASS; mirror -R -p --parallel=4 dist/ $SERV00_PATH; bye"
+
+      - name: Set current date as environment variable
+        run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Deploy to GitHub Pages (backup mirror)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          keep_files: true
+          commit_message: "Daily Summary: ${{ env.DATE }}"
+          publish_branch: gh-pages
+          enable_jekyll: true
