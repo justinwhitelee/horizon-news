@@ -55,7 +55,7 @@ jobs:
           SERV00_PATH: ${{ secrets.SERV00_PATH }}
         run: |
           sudo apt-get update -qq && sudo apt-get install -y lftp
-          lftp -e "set ssl:verify-certificate no; open sftp://$SERV00_HOST; user $SERV00_USER $SERV00_PASS; mirror -R -p --parallel=4 dist/ $SERV00_PATH; bye"
+          lftp -e "set ssl:verify-certificate no; open sftp://$SERV00_HOST; user $SERV00_USER '$SERV00_PASS'; mirror -R -p --parallel=4 dist/ $SERV00_PATH; bye"
 
       - name: Set current date as environment variable
         run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
