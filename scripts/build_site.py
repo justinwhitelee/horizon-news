@@ -50,36 +50,15 @@ body {
 }
 .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 64px; }
 
-/* ── Header ── */
-.site-header {
-  background: linear-gradient(135deg,#0b1f3a 0%,#0f3057 50%,#0b4a6f 100%);
-  color: #fff; padding: 28px 0 36px; position: relative; overflow: hidden;
+/* ── 频道横幅（位于站点统一外壳下方，标识「科技仙岛」频道） ── */
+.kjxd-banner {
+  display:flex; align-items:center; gap:16px; margin:22px 0 6px;
+  padding:18px 20px; background:#fff; border:1px solid var(--line);
+  border-radius:14px; box-shadow:0 1px 3px rgba(15,23,42,.04);
 }
-.site-header::after {
-  content:""; position:absolute; inset:0;
-  background: radial-gradient(circle at 80% 20%, rgba(6,182,212,.25), transparent 50%),
-              radial-gradient(circle at 10% 90%, rgba(245,158,11,.18), transparent 55%);
-  pointer-events:none;
-}
-.site-header .wrap { position: relative; z-index: 1; }
-.brand-row { display:flex; align-items:center; gap:16px; }
-.brand-logo {
-  width:64px; height:64px; border-radius:14px; background:#fff;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow: 0 8px 24px rgba(0,0,0,.25);
-}
-.brand-logo img { width:54px; height:54px; object-fit:contain; }
-.brand-title { font-size:26px; font-weight:800; letter-spacing:.5px; margin:0; }
-.brand-sub { font-size:13px; opacity:.75; margin-top:2px; font-weight:400; }
-.cross-nav {
-  display:flex; gap:8px; flex-wrap:wrap; margin-top:18px;
-}
-.cross-nav a {
-  font-size:13px; color:#cbd5e1; text-decoration:none;
-  padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12); transition:.2s;
-}
-.cross-nav a:hover { background:rgba(6,182,212,.25); color:#fff; border-color:rgba(6,182,212,.5); }
+.kjxd-banner-logo { width:56px; height:56px; border-radius:12px; box-shadow:0 4px 14px rgba(6,182,212,.22); }
+.kjxd-banner-title { font-size:22px; font-weight:800; color:var(--brand); letter-spacing:.3px; }
+.kjxd-banner-sub { font-size:13px; color:var(--muted); margin-top:3px; }
 
 /* ── Hero (date page) ── */
 .hero { padding: 28px 0 16px; }
@@ -154,13 +133,7 @@ body {
   .idx-card .date-pill { flex:none; align-self:flex-start; }
 }
 
-/* ── Footer ── */
-.site-footer {
-  margin-top:48px; padding:28px 0; border-top:1px solid var(--line);
-  color: var(--muted); font-size:13px; text-align:center; line-height:1.8;
-}
-.site-footer a { color: var(--brand-2); text-decoration:none; }
-.site-footer a:hover { text-decoration:underline; }
+/* 页脚由全站统一外壳 mf-shell.js 注入，本页不再自带 footer */
 
 /* ── Markdown body fallback ── */
 article.body-md h2 { font-size:20px; margin-top:28px; color: var(--brand); }
@@ -171,12 +144,10 @@ article.body-md details { margin:10px 0; }
 article.body-md details summary { cursor:pointer; color:var(--brand-2); font-weight:600; }
 """
 
-CROSS_NAV = [
-    ("🏠 慢富15 主页", "https://dao.serv00.net/index.html"),
-    ("📡 热点信息雷达", "https://dao.serv00.net/hot-search/"),
-    ("📚 投资知识库", "https://dao.serv00.net/kb/"),
-    ("⚖️ 仓位平衡系统", "https://dao.serv00.net/wp-content/uploads/2026/04/E58AA8E68081E4BB93E4BD8DE5B9B3E8A1A1E7B3BBE7BB9F1.0EFBC88E59BBDE58685E78988EFBC89.html"),
-]
+# 全站统一外壳（站点导航 + 页脚）由 /assets/mf-shell.js 注入：
+#   <script src="/assets/mf-shell.js" data-mode="app" defer></script>
+# 该外壳已内置「🚀 科技仙岛」频道入口，故本页只需提供频道横幅与内容。
+SHELL_JS = '<script src="/assets/mf-shell.js" data-mode="app" defer></script>'
 
 def strip_front_matter(text: str) -> str:
     if text.startswith("---"):
@@ -242,30 +213,14 @@ def selected_count(md_text: str) -> int:
     if m: return int(m.group(1))
     return 0
 
-def header_html(active: str) -> str:
-    nav_links = "".join(
-        f'<a href="{u}">{n}</a>' for n, u in CROSS_NAV
-    )
+def banner_html() -> str:
+    """频道横幅：在站点统一外壳（mf-shell）下方标识「科技仙岛」频道。"""
     return (
-        '<header class="site-header"><div class="wrap">'
-        '<div class="brand-row">'
-        '<div class="brand-logo"><img src="kjxd-logo.png" alt="科技仙岛" /></div>'
-        '<div><div class="brand-title">科技仙岛</div>'
-        '<div class="brand-sub">Horizon · 全球科技与新闻每日 AI 聚合</div></div>'
+        '<div class="kjxd-banner">'
+        '<img src="kjxd-logo.png" alt="科技仙岛" class="kjxd-banner-logo" />'
+        '<div><div class="kjxd-banner-title">科技仙岛 · Horizon</div>'
+        '<div class="kjxd-banner-sub">全球科技与新闻 · 每日 AI 精选聚合</div></div>'
         '</div>'
-        f'<nav class="cross-nav">{nav_links}</nav>'
-        '</div></header>'
-    )
-
-def footer_html() -> str:
-    links = " · ".join(f'<a href="{u}">{n}</a>' for n, u in CROSS_NAV)
-    return (
-        '<footer class="site-footer"><div class="wrap">'
-        f'{links}<br>'
-        '由 <a href="https://github.com/justinwhitelee/horizon-news">Horizon AI</a> 每日自动聚合生成 · '
-        '数据基准日为发布当日 · 原始来源见各条目链接<br>'
-        '© 2026 慢富15 · <a href="https://dao.serv00.net/">dao.serv00.net</a>'
-        '</div></footer>'
     )
 
 def card_html(item) -> str:
@@ -316,9 +271,10 @@ def date_page_html(date: str, md_text: str) -> str:
 <title>科技仙岛 · {date} 每日精选</title>
 <meta name="description" content="科技仙岛 — Horizon AI 每日精选全球科技与新闻，{date} 共 {len(items)} 条。">
 <style>{CSS}</style>
+{SHELL_JS}
 </head><body>
-{header_html("date")}
 <main class="wrap">
+  {banner_html()}
   <section class="hero">
     <div class="date">{date}</div>
     <h1>今日精选 · 全球科技与新闻</h1>
@@ -326,7 +282,6 @@ def date_page_html(date: str, md_text: str) -> str:
   </section>
   <section class="cards">{cards}</section>
 </main>
-{footer_html()}
 </body></html>"""
 
 def index_page_html(entries) -> str:
@@ -358,9 +313,10 @@ def index_page_html(entries) -> str:
 <title>科技仙岛 · 每日全球科技与新闻 AI 聚合</title>
 <meta name="description" content="科技仙岛 — Horizon AI 每日自动聚合全球科技动态与重要新闻，由 AI 摘要去噪，保留高价值信号。">
 <style>{CSS}</style>
+{SHELL_JS}
 </head><body>
-{header_html("index")}
 <main class="wrap">
+  {banner_html()}
   <section class="hero">
     <div class="date">Horizon · Daily AI Digest</div>
     <h1>每日精选 · 全球科技与新闻</h1>
@@ -375,7 +331,6 @@ def index_page_html(entries) -> str:
   </section>
   <section>{cards_html}</section>
 </main>
-{footer_html()}
 </body></html>"""
 
 def copy_assets():
